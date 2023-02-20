@@ -1,9 +1,144 @@
 ---
-title: "Visualization Final Report"
-author: "Me!"
+title: "Pet Cats UK Data Visualization Report"
+author: "Gabriel Wallace"
+message: false
+warning: false
 format: 
   html: 
     theme: cosmo
 ---
 
-## 
+## Code, Libraries, Experimenting, etc.
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+library(ggthemes)
+```
+
+```{r}
+install.packages("patchwork")
+library(patchwork)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2023-01-31')
+```
+
+```{r}
+cats_uk <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-31/cats_uk.csv')
+cats_uk_reference <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-31/cats_uk_reference.csv')
+```
+
+```{r}
+cats_uk_reference
+```
+
+```{r}
+cats_uk
+```
+
+```{r}
+cats_uk |>
+  filter(tag_id == "Athena") |>
+  filter(timestamp < "2017-06-25") ->
+  athena_stats
+```
+
+```{r}
+cats_uk |>
+  filter(tag_id == "Jago") |>
+  filter(timestamp < "2017-06-29") ->
+  jago_stats
+```
+
+```{r}
+ggplot(athena_stats,
+       aes(x = timestamp, y = ground_speed, fill = tag_id))+
+  geom_area(color = "black",  show.legend = FALSE)+
+  scale_fill_wsj()+
+  labs(y = "Speed",
+       x = "Time",
+       title = "Athena")+
+  guides(
+    tag_id = "none"
+  )+
+  theme_solarized() -> athena_plot
+```
+
+```{r}
+ggplot(jago_stats,
+       aes(x = timestamp, y = ground_speed, fill = tag_id))+
+  geom_area(color = "black",  show.legend = FALSE)+
+  scale_fill_brewer(palette = "Dark2")+
+  labs(y = "Speed",
+       x = "Time",
+       title = "Jago")+
+  guides(
+    tag_id = "none"
+  )+
+  theme_solarized() -> jago_plot
+```
+
+```{r}
+athena_plot / jago_plot
+```
+
+```{r}
+cats_uk_reference |>
+  filter(
+    animal_sex == "m"
+  ) -> male_cats
+```
+
+```{r}
+cats_uk_reference |>
+  filter(
+    animal_sex == "f"
+  ) -> female_cats
+```
+
+```{r}
+ggplot(male_cats, aes(x = hrs_indoors, y = prey_p_month))+
+  geom_smooth(color = "red", show.legend = FALSE)+
+  labs(
+    title = "Number of Prey/Month - Male Cats",
+    x = "Hrs Indoors",
+    y = "Prey/Month"
+  )+
+  theme_solarized() -> male_plot
+```
+
+```{r}
+ggplot(female_cats, aes(x = hrs_indoors, y = prey_p_month))+
+  geom_smooth(color = "red", show.legend = FALSE)+
+  labs(
+    title = "Number of Prey/Month - Female Cats",
+    x = "Hrs Indoors",
+    y = "Prey/Month"
+  )+
+  theme_solarized() -> female_plot
+```
+
+## Final Plot
+
+```{r}
+male_plot / female_plot +
+  labs(
+    caption = "source: doi:10.1111/acv.12563, doi:10.5441/001/1.pf315732"
+  )
+```
+
+## Report
+
+The data I am plotting comes from the `tidytuesday` data and is the [Pet Cats UK](https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-01-31/readme.md) data. Specifically, I created two visualizations: the number of prey/month compared to the number of hours spent indoors for both male and female cats. Originally, I wanted to create two plots that compared the ground speeds of two different cats over a day. I was able to successfully create those plots, as seen above, however when reviewing the data, the ground speeds are reported in m/s, which makes the data captured erroneous, or the units erroneous. Because of this, I decided to switch to the number of prey/month plots
+
+I didn't sketch out ideas for the plots before hand, but I knew that I wanted them to be easy to read, and for the data to appear continuous (as opposed to a point plot). Originally, I experimented with using `geom_area`, but this gave me plots that were jagged and not as easy to read (such as the speed plots). I then decided to use `geom_smooth` as this created an easy to read and understand visualization of the data that was also continuous.
+
+Fixing the labels were relatively straightforward. I knew I wanted the x and y axes to say "Hrs Indoors" and "Prey/Month" as opposed to "hrs_indoors" and "prey_p\_month", as the former are much more aesthetically pleasing and easier to read. As I was only creating two plots with one line plotted on each, I knew that I did not need the legend, so I got rid of it with `show.legend = FALSE` and instead differentiated the two plots with their titles. For the theme, I wanted something that was simple but also nice to look at. Initially, I wanted to use `theme_wsj`, however I could not figure out a way to get all of the labels to appear correctly with that theme. I then experimented with `theme_economist`, however I ultimately settled on `theme_solarized`, as I felt the red line on top of the beige background was the best mix of simple and pleasing.
+
+Finally, since I had created two plots, I knew that I needed to use `patchwork` to orientate them into the same figure. I initially tried to use them side-by-side, however the plots became too compressed and difficult to read in that orientation, so I instead stacked them. I then used the `labs` function to create a caption that cited the two sources the data package requested that everyone cites when using this data set.
+
+While I am pleased with the outcome, the plot(s) could certainly be improved. One way the plot falls short of my ultimate vision is with the labeling of the y-axis. The two plots have different ranges of their y-axis, and while this does not *ruin* the plots as they are still understandable, it does make them slightly harder to understand at an initial glance.
